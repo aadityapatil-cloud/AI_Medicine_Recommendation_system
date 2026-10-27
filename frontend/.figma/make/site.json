@@ -1,0 +1,10 @@
+{
+  "description": "This AI-powered healthcare decision support tool helps users explore symptom predictions and medicine information, promoting informed health choices.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
