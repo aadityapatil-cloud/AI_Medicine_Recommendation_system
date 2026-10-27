@@ -1,12 +1,21 @@
 import { useState, useId } from "react";
 import { loginPatient, registerPatient, resetPatientPassword, verifyMobileNumber } from "../api";
+import { translations, type Language } from "../translations";
+import { LanguageSelector } from "./LanguageSelector";
 import type { PatientUser } from "../types";
 
 interface AuthPageProps {
   onAuthSuccess: (user: PatientUser) => void;
+  lang?: Language;
+  onLanguageChange?: (lang: Language) => void;
 }
 
-export function AuthPage({ onAuthSuccess }: AuthPageProps) {
+export function AuthPage({
+  onAuthSuccess,
+  lang = "en",
+  onLanguageChange,
+}: AuthPageProps) {
+  const t = translations[lang] || translations.en;
   const [mode, setMode] = useState<"login" | "signup" | "forgot" | "forgot-mobile">("login");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -250,6 +259,17 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        {/* Language Selector in Auth Card */}
+        {onLanguageChange && (
+          <div className="auth-lang-row">
+            <LanguageSelector
+              currentLang={lang}
+              onLanguageChange={onLanguageChange}
+              compact
+            />
+          </div>
+        )}
+
         {/* Header Branding */}
         <div className="auth-header">
           <div className="brand auth-brand">
@@ -261,27 +281,27 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
               <span className="ai-dot dot-c" />
             </div>
             <div>
-              <strong>AI Medicine</strong>
-              <span>Clinical Decision Support</span>
+              <strong>{t.brandTitle}</strong>
+              <span>{t.clinicalSupport}</span>
             </div>
           </div>
           <h2>
             {mode === "login"
-              ? "Sign In to Your Account"
+              ? t.signInToAccount
               : mode === "signup"
-              ? "Patient Registration"
+              ? t.patientRegistration
               : mode === "forgot-mobile"
-              ? "Forgot Password"
-              : "Reset Your Password"}
+              ? t.forgotPasswordTitle
+              : t.forgotPasswordTitle}
           </h2>
           <p>
             {mode === "login"
-              ? "Access AI-powered symptom analysis, model predictions, and safety verification."
+              ? t.signInDesc
               : mode === "signup"
-              ? "Create an account to evaluate symptoms and access personalized clinical support."
+              ? t.signUpDesc
               : mode === "forgot-mobile"
-              ? "Enter your registered mobile number to verify your account and access your dashboard."
-              : "Verify your email and registered birth date to securely create a new password."}
+              ? t.forgotPasswordDesc
+              : t.forgotPasswordDesc}
           </p>
         </div>
 
@@ -294,7 +314,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             className={`auth-tab ${mode === "login" ? "active" : ""}`}
             onClick={() => handleSwitchMode("login")}
           >
-            Sign In
+            {t.signInTab}
           </button>
           <button
             type="button"
@@ -303,7 +323,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             className={`auth-tab ${mode === "signup" ? "active" : ""}`}
             onClick={() => handleSwitchMode("signup")}
           >
-            Sign Up
+            {t.signUpTab}
           </button>
           {mode === "forgot-mobile" && (
             <button
@@ -312,7 +332,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
               aria-selected={true}
               className="auth-tab active"
             >
-              Forgot Password
+              {t.forgotPasswordTab}
             </button>
           )}
           {mode === "forgot" && (
@@ -322,7 +342,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
               aria-selected={true}
               className="auth-tab active"
             >
-              Reset Password
+              {t.forgotPasswordTab}
             </button>
           )}
         </div>
@@ -371,7 +391,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         {mode === "login" && (
           <form onSubmit={handleLoginSubmit} className="auth-form" noValidate>
             <div className="form-group">
-              <label htmlFor={emailId}>Email Address</label>
+              <label htmlFor={emailId}>{t.emailLabel}</label>
               <div className="input-with-icon">
                 <input
                   id={emailId}
@@ -386,7 +406,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             </div>
 
             <div className="form-group">
-              <label htmlFor={passwordId}>Password</label>
+              <label htmlFor={passwordId}>{t.passwordLabel}</label>
               <div className="input-with-action">
                 <input
                   id={passwordId}
@@ -415,7 +435,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                     handleSwitchMode("forgot-mobile");
                   }}
                 >
-                  Forgot Password?
+                  {t.forgotPasswordLink}
                 </button>
               </div>
             </div>
@@ -428,21 +448,21 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
               {loading ? (
                 <>
                   <span className="spinner-sm" />
-                  <span>Signing In…</span>
+                  <span>{t.signingInBtn}</span>
                 </>
               ) : (
-                "Sign In to Dashboard"
+                t.signInBtn
               )}
             </button>
 
             <div className="auth-footer-prompt">
-              <span>Don't have an account yet?</span>{" "}
+              <span>{t.noAccountPrompt}</span>{" "}
               <button
                 type="button"
                 className="link-btn"
                 onClick={() => handleSwitchMode("signup")}
               >
-                Create a patient account
+                {t.createAccountLink}
               </button>
             </div>
           </form>
@@ -452,7 +472,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         {mode === "signup" && (
           <form onSubmit={handleSignupSubmit} className="auth-form" noValidate>
             <div className="form-group">
-              <label htmlFor={fullNameId}>Full Name</label>
+              <label htmlFor={fullNameId}>{t.fullNameLabel}</label>
               <input
                 id={fullNameId}
                 type="text"
@@ -466,14 +486,14 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
             <div className="form-group">
               <div className="label-with-badge">
-                <label htmlFor={dobId}>Date of Birth</label>
+                <label htmlFor={dobId}>{t.dobLabel}</label>
                 {calculatedAge !== null && (
                   <span
                     className={`age-badge ${
                       calculatedAge >= 18 ? "age-badge--valid" : "age-badge--invalid"
                     }`}
                   >
-                    Age: {calculatedAge} {calculatedAge >= 18 ? "(Eligible)" : "(Under 18)"}
+                    Age: {calculatedAge} {calculatedAge >= 18 ? `(${t.ageValidBadge})` : `(${t.ageInvalidBadge})`}
                   </span>
                 )}
               </div>
@@ -486,12 +506,12 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 required
               />
               <span className="field-hint">
-                Must be at least 18 years old to register. Calculated securely from your birth date.
+                {t.dobHint}
               </span>
             </div>
 
             <div className="form-group">
-              <label htmlFor={mobileId}>Mobile Number</label>
+              <label htmlFor={mobileId}>{t.mobileLabel}</label>
               <input
                 id={mobileId}
                 type="tel"
@@ -504,7 +524,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             </div>
 
             <div className="form-group">
-              <label htmlFor={emailId}>Email Address</label>
+              <label htmlFor={emailId}>{t.emailLabel}</label>
               <input
                 id={emailId}
                 type="email"
@@ -517,7 +537,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             </div>
 
             <div className="form-group">
-              <label htmlFor={passwordId}>Password</label>
+              <label htmlFor={passwordId}>{t.passwordLabel}</label>
               <div className="input-with-action">
                 <input
                   id={passwordId}
@@ -540,7 +560,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             </div>
 
             <div className="form-group">
-              <label htmlFor={confirmPasswordId}>Confirm Password</label>
+              <label htmlFor={confirmPasswordId}>{t.confirmPasswordLabel}</label>
               <div className="input-with-action">
                 <input
                   id={confirmPasswordId}
@@ -554,7 +574,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 <button
                   type="button"
                   className="password-toggle-btn"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onClick={() => setShowConfirmNewPassword(!showConfirmPassword)}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? "Hide" : "Show"}
@@ -570,21 +590,21 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
               {loading ? (
                 <>
                   <span className="spinner-sm" />
-                  <span>Creating Account…</span>
+                  <span>{t.creatingAccountBtn}</span>
                 </>
               ) : (
-                "Create Patient Account"
+                t.createAccountBtn
               )}
             </button>
 
             <div className="auth-footer-prompt">
-              <span>Already registered?</span>{" "}
+              <span>{t.alreadyRegisteredPrompt}</span>{" "}
               <button
                 type="button"
                 className="link-btn"
                 onClick={() => handleSwitchMode("login")}
               >
-                Sign in here
+                {t.signInHereLink}
               </button>
             </div>
           </form>
@@ -699,7 +719,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         {mode === "forgot-mobile" && (
           <form onSubmit={handleForgotMobileSubmit} className="auth-form" noValidate>
             <div className="form-group">
-              <label htmlFor={forgotMobileId}>Registered Mobile Number</label>
+              <label htmlFor={forgotMobileId}>{t.registeredMobileLabel}</label>
               <input
                 id={forgotMobileId}
                 type="tel"
@@ -711,7 +731,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 autoFocus
               />
               <span className="field-hint">
-                Enter the mobile number registered during your account signup to verify your identity.
+                {t.registeredMobileHint}
               </span>
             </div>
 
@@ -723,21 +743,21 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
               {loading ? (
                 <>
                   <span className="spinner-sm" />
-                  <span>Verifying…</span>
+                  <span>{t.verifyingBtn}</span>
                 </>
               ) : (
-                "OK"
+                t.okBtn
               )}
             </button>
 
             <div className="auth-footer-prompt">
-              <span>Remembered your password?</span>{" "}
+              <span>{t.rememberPasswordPrompt}</span>{" "}
               <button
                 type="button"
                 className="link-btn"
                 onClick={() => handleSwitchMode("login")}
               >
-                Back to Sign In
+                {t.backToSignInBtn}
               </button>
             </div>
 
@@ -756,7 +776,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 <path d="m9 12 2 2 4-4" />
               </svg>
               <span>
-                Security note: Mobile verification is validated on the backend against your registered patient profile. For production systems, an SMS OTP service is required for two-factor verification.
+                {t.securityNote}
               </span>
             </div>
           </form>
@@ -765,7 +785,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         {/* Disclaimer footer */}
         <div className="auth-disclaimer">
           <small>
-            Educational AI decision-support platform. This system does not provide medical diagnoses or prescriptions. Minimum age requirement is 18 years.
+            {t.disclaimerText}
           </small>
         </div>
       </div>

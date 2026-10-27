@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
+import { translations, type Language } from "../translations";
 
 interface WelcomePopupProps {
   userName?: string;
   onClose: () => void;
+  lang?: Language;
 }
 
-export function WelcomePopup({ userName, onClose }: WelcomePopupProps) {
+export function WelcomePopup({ userName, onClose, lang = "en" }: WelcomePopupProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(5);
+
+  const t = translations[lang] || translations.en;
 
   useEffect(() => {
     // 1-second interval to update remaining seconds display
@@ -86,12 +90,12 @@ export function WelcomePopup({ userName, onClose }: WelcomePopupProps) {
         {/* Status Pill */}
         <div className="welcome-popup-pill">
           <span className="welcome-popup-dot-live" />
-          <span>Session Authenticated</span>
+          <span>{t.sessionAuthenticated}</span>
         </div>
 
         {/* Required Headings: “Welcome” and “AI Medicine Recommendation System” */}
         <h1 id="welcome-popup-heading" className="welcome-popup-title">
-          Welcome
+          {lang === "en" ? t.welcome : `${t.welcome} (Welcome)`}
         </h1>
 
         {userName && (
@@ -101,12 +105,11 @@ export function WelcomePopup({ userName, onClose }: WelcomePopupProps) {
         )}
 
         <h2 className="welcome-popup-system">
-          AI Medicine Recommendation System
+          {lang === "en" ? t.systemName : `${t.systemName} (AI Medicine)`}
         </h2>
 
         <p className="welcome-popup-desc">
-          Your clinical analytics dashboard is ready with 132 machine learning
-          symptom inference features and safety verification.
+          {t.welcomeDesc}
         </p>
 
         {/* 5-Second Animated Progress Bar */}
@@ -117,15 +120,15 @@ export function WelcomePopup({ userName, onClose }: WelcomePopupProps) {
           <div className="welcome-popup-timer-text">
             <span>
               {secondsRemaining > 0
-                ? `Dismissing in ${secondsRemaining}s…`
-                : "Entering dashboard…"}
+                ? `${t.dismissingIn} ${secondsRemaining}s…`
+                : t.enteringDashboard}
             </span>
             <button
               type="button"
               className="welcome-popup-manual-dismiss"
               onClick={handleDismiss}
             >
-              Enter Now &rarr;
+              {t.enterNowBtn}
             </button>
           </div>
         </div>

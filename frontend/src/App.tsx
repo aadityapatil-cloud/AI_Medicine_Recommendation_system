@@ -16,6 +16,14 @@ import {
 } from "./api"
 import { AuthPage } from "./components/AuthPage"
 import { WelcomePopup } from "./components/WelcomePopup"
+import { LanguageSelector } from "./components/LanguageSelector"
+import {
+  translations,
+  getStoredLanguage,
+  setStoredLanguage,
+  type Language,
+  type Translations,
+} from "./translations"
 import type {
   ApiError,
   MedicineRecord,
@@ -196,7 +204,15 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   )
 }
 
-function Brand({ compact = false }: { compact?: boolean }) {
+function Brand({
+  compact = false,
+  title = "AI Medicine",
+  subtitle = "Information System",
+}: {
+  compact?: boolean
+  title?: string
+  subtitle?: string
+}) {
   return (
     <div className={`brand ${compact ? "brand--compact" : ""}`}>
       <div className="brand-mark">
@@ -208,8 +224,8 @@ function Brand({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact && (
         <div>
-          <strong>AI Medicine</strong>
-          <span>Information System</span>
+          <strong>{title}</strong>
+          <span>{subtitle}</span>
         </div>
       )}
     </div>
@@ -274,11 +290,17 @@ function TopBar({
   onOpenMenu,
   currentUser,
   onLogout,
+  lang,
+  onLanguageChange,
+  t,
 }: {
   screen: Screen
   onOpenMenu: () => void
   currentUser: PatientUser | null
   onLogout: () => void
+  lang: Language
+  onLanguageChange: (lang: Language) => void
+  t: Translations
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -343,27 +365,24 @@ function TopBar({
 
   const titles: Record<Screen, { title: string; subtitle: string }> = {
     dashboard: {
-      title: "Healthcare Analytics Dashboard",
-      subtitle: "AI-Powered Medical Decision Support System",
+      title: t.dashboardTitle,
+      subtitle: t.dashboardSubtitle,
     },
     checker: {
-      title: "Symptom Checker & Analysis",
-      subtitle: "132 Clinical Features • Real-Time Machine Learning Inference",
+      title: t.checkerTitle,
+      subtitle: t.checkerSubtitle,
     },
     results: {
-      title: "Prediction & Explainability Results",
-      subtitle:
-        "Multi-Class Logistic Regression • XAI Attribution • Medicine Safety",
+      title: t.resultsTitle,
+      subtitle: t.resultsSubtitle,
     },
     medicines: {
-      title: "Medicine Information Explorer",
-      subtitle:
-        "Verified Dataset Formulations, Side Effects & Contraindications",
+      title: t.medicinesTitle,
+      subtitle: t.medicinesSubtitle,
     },
     about: {
-      title: "Project Methodology & Architecture",
-      subtitle:
-        "Academic Decision Support Prototype & Responsible AI Standards",
+      title: t.aboutTitle,
+      subtitle: t.aboutSubtitle,
     },
   }
 
@@ -392,13 +411,19 @@ function TopBar({
         <Icon name="search" size={17} />
         <input
           type="text"
-          placeholder="Search symptoms, conditions, medicines..."
+          placeholder={t.searchPlaceholder}
           aria-label="Global search"
           readOnly
         />
       </div>
 
       <div className="top-header-right" ref={popoverRef}>
+        {/* 3-Language Selector: English, Marathi, Hindi */}
+        <LanguageSelector
+          currentLang={lang}
+          onLanguageChange={onLanguageChange}
+        />
+
         {/* Functional Notification Button */}
         <button
           type="button"
@@ -511,7 +536,7 @@ function TopBar({
           </div>
           <div className="user-meta">
             <strong>{userName}</strong>
-            <small>Patient Account</small>
+            <small>{t.patientAccount}</small>
           </div>
           <Icon name="chevron" size={14} />
         </button>
@@ -529,7 +554,7 @@ function TopBar({
                   </span>
                 ) : null}
                 <span className="user-meta-pill">
-                  Patient #{currentUser?.id}
+                  {t.patientAccount} #{currentUser?.id}
                 </span>
               </div>
             </div>
@@ -543,7 +568,7 @@ function TopBar({
               role="menuitem"
             >
               <Icon name="logout" size={16} />
-              <span>Sign Out</span>
+              <span>{t.signOut}</span>
             </button>
           </div>
         )}
@@ -2364,6 +2389,21 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
   const [showWelcomePopup, setShowWelcomePopup] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage())
+  const t = translations[lang] || translations.en
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang)
+    setStoredLanguage(newLang)
+  }
+
+  const localizedNavItems: { id: Screen; label: string; icon: IconName }[] = [
+    { id: "dashboard", label: t.navDashboard, icon: "dashboard" },
+    { id: "checker", label: t.navChecker, icon: "activity" },
+    { id: "results", label: t.navResults, icon: "chart" },
+    { id: "medicines", label: t.navMedicines, icon: "medicine" },
+    { id: "about", label: t.navAbout, icon: "info" },
+  ]
 
   const [screen, setScreen] = useState<Screen>("dashboard")
   const [selected, setSelected] = useState<string[]>([])
@@ -2492,7 +2532,13 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <AuthPage onAuthSuccess={handleAuthSuccess} />
+    return (
+      <AuthPage
+        onAuthSuccess={handleAuthSuccess}
+        lang={lang}
+        onLanguageChange={handleLanguageChange}
+      />
+    )
   }
 
   return (
@@ -2501,6 +2547,7 @@ export default function App() {
         <WelcomePopup
           userName={currentUser.full_name}
           onClose={() => setShowWelcomePopup(false)}
+          lang={lang}
         />
       )}
       <aside
@@ -2509,7 +2556,11 @@ export default function App() {
         }`}
       >
         <div className="sidebar-top">
-          <Brand compact={sidebarCollapsed} />
+          <Brand
+            compact={sidebarCollapsed}
+            title={t.brandTitle}
+            subtitle={t.brandSubtitle}
+          />
           <button
             type="button"
             className="sidebar-toggle-btn"
@@ -2532,7 +2583,7 @@ export default function App() {
         </div>
         <nav aria-label="Main navigation">
           <span className="nav-label">Workspace</span>
-          {navItems.map((item) => (
+          {localizedNavItems.map((item) => (
             <button
               className={screen === item.id ? "nav-item active" : "nav-item"}
               key={item.id}
@@ -2567,7 +2618,7 @@ export default function App() {
       )}
 
       <div className="mobile-header">
-        <Brand />
+        <Brand title={t.brandTitle} subtitle={t.brandSubtitle} />
         <button
           type="button"
           className="icon-button"
@@ -2584,6 +2635,9 @@ export default function App() {
           onOpenMenu={() => setMobileOpen(true)}
           currentUser={currentUser}
           onLogout={handleLogout}
+          lang={lang}
+          onLanguageChange={handleLanguageChange}
+          t={t}
         />
         <div className="content">
           {screen === "dashboard" && (
