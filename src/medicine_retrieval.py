@@ -106,6 +106,67 @@ def search_medicines(condition, max_results=10):
 
 
 # ==================================================
+# 2b. FREE-TEXT SEARCH (medicine name or use)   <-- NEW
+# ==================================================
+
+_NAME_LOWER = medicine_df["Name"].fillna("").astype(str).str.lower()
+_USES_LOWER = medicine_df["Uses"].fillna("").astype(str).str.lower()
+
+_RESULT_COLUMNS = [
+    "Name", "Uses", "Composition", "Side_effects", "How_to_use",
+    "Alcohol", "Pregnancy", "Breast feeding", "Driving", "Kidney",
+    "Liver", "manufacturer",
+]
+
+
+def search_medicines_by_query(query, max_results=20):
+    """
+    Search medicines by name or reported use (case-insensitive).
+    Name matches are ranked before use matches.
+    """
+
+    if not query or not isinstance(query, str):
+        return []
+
+    q = query.strip().lower()
+
+    if len(q) < 2:
+        return []
+
+    name_starts = _NAME_LOWER.str.startswith(q)
+    name_has = _NAME_LOWER.str.contains(q, regex=False)
+    uses_has = _USES_LOWER.str.contains(q, regex=False)
+
+    ranked = pd.concat([
+        medicine_df[name_starts],
+        medicine_df[name_has & ~name_starts],
+        medicine_df[uses_has & ~name_has],
+    ]).head(max_results)
+
+    ranked = ranked[_RESULT_COLUMNS].fillna("Information not available")
+
+    medicines = []
+
+    for _, row in ranked.iterrows():
+        medicines.append({
+            "name": row["Name"],
+            "uses": row["Uses"],
+            "composition": row["Composition"],
+            "side_effects": row["Side_effects"],
+            "how_to_use": row["How_to_use"],
+            "alcohol": row["Alcohol"],
+            "pregnancy": row["Pregnancy"],
+            "breast_feeding": row["Breast feeding"],
+            "driving": row["Driving"],
+            "kidney": row["Kidney"],
+            "liver": row["Liver"],
+            "manufacturer": row["manufacturer"],
+        })
+
+    return medicines
+
+
+# ==================================================
 # 3. CLEAN MEDICINE INFORMATION FUNCTION
 # ==================================================
 

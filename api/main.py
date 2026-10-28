@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Query, status  # <-- NEW (Query)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,6 +20,7 @@ FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
 sys.path.insert(0, str(SRC_PATH))
 
 from disease_medicine_pipeline import run_healthcare_pipeline
+from medicine_pipeline import search_medicines_with_safety  # <-- NEW
 from database import (
     init_db,
     get_patient_by_email,
@@ -459,6 +460,21 @@ def validate_symptom_input(
     return {"validation_result": result["validation"]}
 
 
+# <-- NEW: medicine search route ----------------------------------
+@router.get("/medicines/search")
+def search_medicine_records(
+    q: str = Query(..., min_length=2, max_length=60),
+    limit: int = Query(20, ge=1, le=50),
+    _current_patient: Dict[str, Any] = Depends(get_current_patient),
+):
+    """Search the medicine dataset by name or use (information only)."""
+    return {
+        "query": q,
+        "medicines": search_medicines_with_safety(q, max_results=limit),
+    }
+# ------------------------------------------------------------------
+
+
 @router.post("/predict")
 def predict(
     request: SymptomRequest,
@@ -536,3 +552,4 @@ else:
             "message": "AI Medicine Information API is running",
             "docs": "/docs",
         }
+    
